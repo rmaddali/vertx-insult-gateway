@@ -14,25 +14,26 @@ public class InsultGatewayVerticle extends AbstractVerticle {
     private String message;
     private String logLevel;
 
-    
+
     private JsonObject config;
-	
-	
-	
+
+
+
 	@Override
     public void start() {
 
 		conf = ConfigRetriever.create(vertx);
-		
-		
+
+
 		Router router = Router.router(vertx);
-        router.get("/api/insult").handler(this::retriveInsult);
-    	
+    router.get("/").handler(this::indexHandler);
+    router.get("/api/insult").handler(this::retriveInsult);
+
         retrieveMessageTemplateFromConfiguration()
         .setHandler(ar -> {
             // Once retrieved, store it and start the HTTP server.
             message = ar.result();
-           
+
             vertx
                 .createHttpServer()
                 .requestHandler(router::accept)
@@ -42,19 +43,25 @@ public class InsultGatewayVerticle extends AbstractVerticle {
                     config().getInteger("http.port", 8080));
 
         });
-        
+
         retrieveLogLevelFromConfiguration()
         .setHandler(ar ->{
-        	
+
         	logLevel = ar.result();
         	//setLogLevel(logLevel);
         });
-        
-    	
-    	
-    	
+
+
+
+
     }
-	
+
+  private void indexHandler(RoutingContext context) {
+    context.response().setStatusCode(200)
+      .putHeader(CONTENT_TYPE, "application/json; charset=utf-8")
+      .end(new JsonObject().put("content", "hi").encode());
+  }
+
 	/*private void setLogLevel(String level) {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
@@ -68,7 +75,7 @@ public class InsultGatewayVerticle extends AbstractVerticle {
         conf.getConfig(ar ->
             future.handle(ar
                 .map(json -> json.getString("message"))
-                .otherwise(t -> null)));	
+                .otherwise(t -> null)));
         return future;
     }
 	private Future<String> retrieveLogLevelFromConfiguration() {
@@ -76,23 +83,23 @@ public class InsultGatewayVerticle extends AbstractVerticle {
         conf.getConfig(ar ->
             future.handle(ar
                 .map(json -> json.getString("level","INFO"))
-                .otherwise(t -> null)));	
+                .otherwise(t -> null)));
         return future;
     }
 
-	
+
 	 private void retriveInsult(RoutingContext rc) {
-		 
-		 
+
+
 		 if (message == null) {
 	            rc.response().setStatusCode(500)
 	                .putHeader(CONTENT_TYPE, "application/json; charset=utf-8")
 	                .end(new JsonObject().put("content", "no config map").encode());
 	            return;
 	        }
-		 
-		
-		 
+
+
+
 	 }
 
 }
