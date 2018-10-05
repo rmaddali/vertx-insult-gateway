@@ -1,0 +1,2 @@
+create table if not exists INSULTS (ID INT IDENTITY PRIMARY KEY ,
+  BODY VARCHAR(255) NOT NULL);
