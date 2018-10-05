@@ -80,6 +80,15 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-client</artifactId>
     </dependency>
+ <dependency>
+  <groupId>io.vertx</groupId>
+  <artifactId>vertx-rx-java2</artifactId>
+</dependency>
+<dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-discovery-bridge-kubernetes</artifactId>
+      
+    </dependency>
   </dependencies>
 
   <build>
