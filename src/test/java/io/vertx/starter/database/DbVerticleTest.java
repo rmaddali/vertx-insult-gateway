@@ -1,8 +1,7 @@
-package io.vertx.starter;
+package io.vertx.starter.database;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.sql.SQLConnection;
@@ -14,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static io.vertx.starter.DbVerticle.PERSIST_INSULT_ADDRESS;
+import static io.vertx.starter.database.DbProps.PERSIST_INSULT_ADDRESS;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
@@ -29,12 +28,14 @@ public class DbVerticleTest {
   public void setUp(TestContext tc) {
     vertx = Vertx.vertx();
 
+    JsonObject config = new JsonObject().put("test", "config success!");
+    DeploymentOptions options = new DeploymentOptions().setConfig(config);
     jdbcClient = JDBCClient.createShared(vertx, new JsonObject()
       .put("url", TEST_DB_URL)
       .put("driver_class", DB_DRIVER)
       .put("max_pool_size", 30));
 
-    vertx.deployVerticle(DbVerticle.class.getName(), tc.asyncAssertSuccess());
+    vertx.deployVerticle(DbVerticle.class.getName(), options, tc.asyncAssertSuccess());
 
     Async async = tc.async();
 

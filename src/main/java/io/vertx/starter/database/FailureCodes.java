@@ -1,6 +1,6 @@
-package io.vertx.starter;
+package io.vertx.starter.database;
 
-public enum FailureCode {
+public enum FailureCodes {
 
   NO_ACTION_SPECIFIED( "No action specified"),
   BAD_ACTION("Bad action"),
@@ -8,7 +8,7 @@ public enum FailureCode {
 
   public String failureCodeMessage;
 
-  private FailureCode(String msg) {
+  private FailureCodes(String msg) {
     this.failureCodeMessage = msg;
   }
 
