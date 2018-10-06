@@ -89,6 +89,10 @@
       <artifactId>vertx-service-discovery-bridge-kubernetes</artifactId>
       
     </dependency>
+    <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-circuit-breaker</artifactId>
+        </dependency>
   </dependencies>
 
   <build>
