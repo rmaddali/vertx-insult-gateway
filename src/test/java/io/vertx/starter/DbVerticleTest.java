@@ -40,6 +40,7 @@ public class DbVerticleTest {
     vertx.eventBus().send(PERSIST_INSULT_ADDRESS, "ping!", ar -> {
       if (ar.succeeded()) {
         System.out.println("Received: " + ar.result().body());
+        tc.assertEquals("pong!", ar.result().body());
         async.complete();
       }else{
         System.out.println("Sending failed: " + ar.result().body());

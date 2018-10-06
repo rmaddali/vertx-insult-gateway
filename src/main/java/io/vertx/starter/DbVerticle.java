@@ -17,6 +17,7 @@ public class DbVerticle extends AbstractVerticle {
     MessageConsumer<String> consumer = eventBus.consumer(PERSIST_INSULT_ADDRESS);
     consumer.handler(message -> {
       System.out.println("I have received a message: " + message.body());
+      message.reply("pong!");
     });
 
     future.complete();
