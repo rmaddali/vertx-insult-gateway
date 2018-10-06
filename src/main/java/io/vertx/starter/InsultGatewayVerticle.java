@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.AsyncResult;
-import io.vertx.reactivex.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -15,10 +15,12 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.reactivex.circuitbreaker.CircuitBreaker;
 import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.CompositeFuture;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
+import io.vertx.reactivex.ext.web.handler.StaticHandler;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
 import io.vertx.reactivex.servicediscovery.types.HttpEndpoint;
 
@@ -83,7 +85,8 @@ public class InsultGatewayVerticle extends AbstractVerticle {
             clientSwarm = WebClient.create(vertx, new WebClientOptions()
                     .setDefaultHost("wildflyswarm-adj.vertx-adjective.svc")
                     .setDefaultPort(8080));
-            router.get("/api/insult").handler(this::getREST);
+            
+            
 		
             ServiceDiscovery.create(vertx, discovery ->
   	      // Retrieve a web client
@@ -93,7 +96,11 @@ public class InsultGatewayVerticle extends AbstractVerticle {
   	        } else {
   	        	clientVertx = ar.result();
   	        	vertx.createHttpServer().requestHandler(router::accept).listen(8080);
-  	        	
+  	        	router.get("/api/insult").handler(this::getREST);
+  	        	router.get("/health").handler(rc -> rc.response().end("OK"));
+  	        	router.get("/*").handler(StaticHandler.create());
+  	        	router.get("/api/cb-state").handler(this::checkHealth);
+  	                  
   	        }
   	      }));
 		
@@ -223,6 +230,37 @@ public class InsultGatewayVerticle extends AbstractVerticle {
             
 			
           });
+    }
+	
+	public void checkHealth(RoutingContext rc) {
+        // Request 2 adjectives and a noun in parallel, then handle the results
+		
+		
+		boolean allBreakersClosed = (
+                (clientSpringbootBreaker.state().equals(CircuitBreakerState.CLOSED)) &&
+                (clientSwarmBreaker.state().equals(CircuitBreakerState.CLOSED))&&(clientVertxBreaker.state().equals(CircuitBreakerState.CLOSED)));
+		
+		
+		
+		JsonObject health = new JsonObject()
+                .put("noun", new JsonObject()
+                                    .put("failures", clientSpringbootBreaker.failureCount())
+                                    .put("state", clientSpringbootBreaker.state().toString()))
+                .put("Swarmadjective", new JsonObject()
+                                    .put("failures", clientSwarmBreaker.failureCount())
+                                    .put("state", clientSwarmBreaker.state().toString()))
+                .put("Vertxadjective", new JsonObject()
+                        .put("failures", clientVertxBreaker.failureCount())
+                        .put("state", clientVertxBreaker.state().toString()))
+                .put("status", allBreakersClosed?"OK":"UNHEALTHY");
+		
+		
+		
+		
+			 rc.response().putHeader("content-type", "application/json").end(health.encodePrettily());
+		 
+		
+        
     }
 	
 	
