@@ -1,21 +1,22 @@
 package io.vertx.starter;
 
-import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 
-import io.reactivex.Single;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.http.HttpServer;
+import io.vertx.core.Handler;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
-import io.vertx.reactivex.ext.web.codec.BodyCodec;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
 import io.vertx.reactivex.servicediscovery.types.HttpEndpoint;
-import io.vertx.servicediscovery.Record;
 
 
 
@@ -45,7 +46,7 @@ public class InsultGatewayVerticle extends AbstractVerticle {
             clientSwarm = WebClient.create(vertx, new WebClientOptions()
                     .setDefaultHost("wildflyswarm-adj.vertx-adjective.svc")
                     .setDefaultPort(8080));
-            router.get("/api/insult").handler(this::invoke);
+            router.get("/api/insult").handler(this::getREST);
 		
             ServiceDiscovery.create(vertx, discovery ->
   	      // Retrieve a web client
@@ -73,30 +74,7 @@ public class InsultGatewayVerticle extends AbstractVerticle {
             
         
     	
-        retrieveMessageTemplateFromConfiguration()
-        .setHandler(ar -> {
-            // Once retrieved, store it and start the HTTP server.
-            message = ar.result();
-           
-            vertx
-                .createHttpServer()
-                .requestHandler(router::accept)
-                .listen(
-                    // Retrieve the port from the configuration,
-                    // default to 8080.
-                    config().getInteger("http.port", 8080));
-
-        });
         
-
-		
-        
-        retrieveLogLevelFromConfiguration()
-        .setHandler(ar ->{
-        	
-        	logLevel = ar.result();
-        	//setLogLevel(logLevel);
-        });
         
     	
     	
@@ -111,58 +89,101 @@ public class InsultGatewayVerticle extends AbstractVerticle {
         ctx.updateLoggers();
     }*/
 
-	private Future<String> retrieveMessageTemplateFromConfiguration() {
-        Future<String> future = Future.future();
-        conf.getConfig(ar ->
-            future.handle(ar
-                .map(json -> json.getString("message"))
-                .otherwise(t -> null)));	
-        return future;
-    }
-	private Future<String> retrieveLogLevelFromConfiguration() {
-        Future<String> future = Future.future();
-        conf.getConfig(ar ->
-            future.handle(ar
-                .map(json -> json.getString("level","INFO"))
-                .otherwise(t -> null)));	
-        return future;
-    }
+	
+	
 
-	private void invoke(RoutingContext rc) {
-		clientVertx.get("/api/adjective").as(BodyCodec.string()).send(ar -> {
-	      if (ar.failed()) {
-	        rc.response().end("Unable to call the greeting service: " + ar.cause().getMessage());
-	      } else {
-	        if (ar.result().statusCode() != 200) {
-	          rc.response().end("Unable to call the greeting service - received status:" + ar.result().statusMessage());
-	        } else {
-	          rc.response().end("Greeting service invoked: '" + ar.result().body() + "'");
-	        }
-	      }
-	    });
-	  }
-	 private void retriveInsult(RoutingContext rc) {
-		 
-		 
-		 if (message == null) {
-	            rc.response().setStatusCode(500)
-	                .putHeader(CONTENT_TYPE.toString(), "application/json; charset=utf-8")
-	                .end(new JsonObject().put("content", "no config map").encode());
-	            return;
-	        }
-		 
-		 
-		 
-	 }
-		 private Single<Record> publishmsg(HttpServer server) {
-			    // 1 - Create a service record using `io.vertx.reactivex.servicediscovery.types.HttpEndpoint.createRecord`.
-			    // This record defines the service name ("greetings"), the host ("localhost"), the server port and the root ("/")
-			    Record record = HttpEndpoint.createRecord("greetings", "localhost", server.actualPort(), "/");
+	private AsyncResult<JsonObject> buildInsult(CompositeFuture cf) {
+        JsonObject insult = new JsonObject();
+        JsonArray adjectives = new JsonArray();
 
-			    // 2 - Call the rxPublish method with the created record and return the resulting single
-			    return discovery.rxPublish(record);
-			}
+        // Because there is no garanteed order of the returned futures, we need to parse the results
+        
+        for (int i=0; i<=cf.size()-1; i++) {
+        	 JsonObject item = cf.resultAt(i);
+             if (item.containsKey("adjective")) {
+                 adjectives.add(item.getString("adjective"));
+             } else {
+                 insult.put("noun", item.getString("noun"));
+             }
+            
+        }
+        insult.put("adjectives", adjectives);
+        
+
+        return Future.succeededFuture(insult);
+    }
+	Future<JsonObject> getNoun() {
+        Future<JsonObject> fut = Future.future();
+        clientSpringboot.get("/api/noun")
+                .timeout(3000)
+                .rxSend()
+               
+                .map(HttpResponse::bodyAsJsonObject)
+                .doOnError(fut::fail)
+                .subscribe(fut::complete);
+        return fut;
+    }
+	
+	
+	Future<JsonObject> getAdjective() {
+        Future<JsonObject> fut = Future.future();
+        clientSwarm.get("/api/adjective")
+                .timeout(3000)
+                .rxSend()
+                
+                .map(HttpResponse::bodyAsJsonObject)
+                .doOnError(fut::fail)
+                .subscribe(fut::complete);
+        return fut;
+    }
+	Future<JsonObject> getAdjective2() {
+        Future<JsonObject> fut = Future.future();
+        clientVertx.get("/api/adjective")
+                .timeout(3000)
+                .rxSend()
+                
+                .map(HttpResponse::bodyAsJsonObject)
+                .doOnError(fut::fail)
+                .subscribe(fut::complete);
+        return fut;
+    }
+	
+	
+	
+	public void getREST(RoutingContext rc) {
+        // Request 2 adjectives and a noun in parallel, then handle the results
 		
+		
+        CompositeFuture.all(getNoun(), getAdjective(), getAdjective2())
+        .setHandler(ar -> {
+        	
+        	if (ar.succeeded()) {
+        		AsyncResult<JsonObject> result=buildInsult(ar.result());
+        		 rc.response().putHeader("content-type", "application/json").end(result.result().encodePrettily());
+        	}
+        	else
+        	{
+        		System.out.println("error");
+        		
+        		rc.response().putHeader("content-type", "application/json").end(new JsonObject("Error").encodePrettily());
+        	}
+
+            
+			
+          });
+    }
+	
+	
+	
+
+	private  final CompositeFuture mapResultToError(CompositeFuture res)
+            throws Exception {
+if (res.succeeded()) {
+return res;
+}
+throw new Exception(res.cause());
+}
+
 		 
 	 
 
