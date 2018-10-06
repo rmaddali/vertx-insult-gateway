@@ -8,4 +8,6 @@ public class DbProps {
   protected static final String CONFIG_DB_DRIVER = "db.driver";
   protected static final String DB_DRIVER = "org.hsqldb.jdbcDriver";
 
+  protected static final String QUERY_ALL_INSULTS = "SELECT * FROM INSULTS";
+
 }

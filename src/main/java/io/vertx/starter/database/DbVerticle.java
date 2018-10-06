@@ -36,7 +36,7 @@ public class DbVerticle extends AbstractVerticle {
     MessageConsumer<JsonObject> consumer = eventBus.consumer(PERSIST_INSULT_ADDRESS);
     consumer.handler(message -> {
 
-      System.out.println("I have received a message: " + message.toString());
+      System.out.println("I have received a message: " + message.body().toString());
 
       JsonObject js = message.body();
       String action = js.getString("action");

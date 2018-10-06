@@ -14,6 +14,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static io.vertx.starter.database.DbProps.PERSIST_INSULT_ADDRESS;
+import static io.vertx.starter.database.DbProps.QUERY_ALL_INSULTS;
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
@@ -63,6 +65,7 @@ public class DbVerticleTest {
   public void testMessageRoundTrip(TestContext tc) {
 
     Async async = tc.async();
+    Async async2 = tc.async();
 
     JsonObject message = new JsonObject()
       .put("action", "persist")
@@ -72,6 +75,11 @@ public class DbVerticleTest {
       if (ar.succeeded()) {
         tc.assertEquals("success", ar.result().body());
         async.complete();
+
+        jdbcClient.query(QUERY_ALL_INSULTS, res ->{
+          assertEquals(1, res.result().getNumRows());
+          async2.complete();
+        });
       }else{
         tc.fail(ar.cause());
       }
