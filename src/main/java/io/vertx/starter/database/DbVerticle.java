@@ -9,12 +9,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 
-import static io.vertx.starter.database.DbProps.CONFIG_DB_DRIVER;
-import static io.vertx.starter.database.DbProps.CONFIG_DB_URL;
-import static io.vertx.starter.database.DbProps.DB_URL;
-import static io.vertx.starter.database.DbProps.DB_DRIVER;
-
-import static io.vertx.starter.database.DbProps.PERSIST_INSULT_ADDRESS;
+import static io.vertx.starter.database.DbProps.*;
 
 public class DbVerticle extends AbstractVerticle {
 
@@ -23,12 +18,15 @@ public class DbVerticle extends AbstractVerticle {
   @Override
   public void start(Future<Void> future) {
 
-    System.out.println(config().getString("test"));
+    System.out.println(config().getString(CONFIG_DB_URL));
+    System.out.println(config().getString(CONFIG_DB_DRIVER));
 
     jdbcClient = JDBCClient.createShared(vertx, new JsonObject()
       .put("url", config().getString(CONFIG_DB_URL, DB_URL))
       .put("driver_class", config().getString(CONFIG_DB_DRIVER, DB_DRIVER))
-      .put("max_pool_size", 30));
+      .put("max_pool_size", 30)
+      .put("user", config().getString(CONFIG_DB_USER, DB_USER))
+      .put("password", config().getString(CONFIG_DB_PASSWORD, DB_PASSWORD)));
 
 
     EventBus eventBus = vertx.eventBus();
@@ -56,7 +54,7 @@ public class DbVerticle extends AbstractVerticle {
 
   private void persistInsult(Message<JsonObject> message) {
 
-    jdbcClient.updateWithParams("insert into INSULTS(body) VALUES (?);", new JsonArray().add(message.body().getString("insult")), res ->{
+    jdbcClient.updateWithParams("insert into PUBLIC.INSULTS (BODY) VALUES ?", new JsonArray().add(message.body().getString("insult")), res ->{
       if (res.succeeded()) {
         message.reply("success");
       }else {

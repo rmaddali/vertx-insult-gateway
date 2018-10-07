@@ -14,9 +14,10 @@
     <main.verticle>io.vertx.starter.InsultGatewayVerticle</main.verticle>
     <vertx-maven-plugin.version>1.0.13</vertx-maven-plugin.version>
     <!-- Flyway Database Migrations -->
+    <flyway.version>5.2.0</flyway.version>
     <flyway.url>jdbc:hsqldb:file:db/techexchange</flyway.url>
     <flyway.driver>org.hsqldb.jdbcDriver</flyway.driver>
-    <flyway.locations>filesystem:src/main/resources/db/migrations</flyway.locations>
+    <flyway.locations>filesystem:src/main/resources/db/migration</flyway.locations>
     <!-- HSQLDB -->
     <hsqldb.version>2.3.4</hsqldb.version>
   </properties>
@@ -47,23 +48,6 @@
       <groupId>io.vertx</groupId> <artifactId>vertx-jdbc-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.hsqldb</groupId>
-      <artifactId>hsqldb</artifactId>
-      <version>${hsqldb.version}</version>
-    </dependency>
-    <!-- Testing Dependencies -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-unit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.7.25</version>
@@ -83,7 +67,6 @@
       <artifactId>log4j-core</artifactId>
       <version>2.11.1</version>
     </dependency>
-
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-config</artifactId>
@@ -95,6 +78,28 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-client</artifactId>
+    </dependency>
+    <!-- Testing Dependencies -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-unit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>${hsqldb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
     </dependency>
   </dependencies>
 

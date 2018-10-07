@@ -17,13 +17,10 @@ public class InsultGatewayVerticle extends AbstractVerticle {
 
     private JsonObject config;
 
-
-
 	@Override
-    public void start() {
+    public void start(Future<Void> startFuture) {
 
 		conf = ConfigRetriever.create(vertx);
-
 
 		Router router = Router.router(vertx);
     router.get("/").handler(this::indexHandler);
