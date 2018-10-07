@@ -12,6 +12,7 @@ import io.vertx.ext.jdbc.JDBCClient;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.vertx.starter.ApplicationProperties.*;
 import static io.vertx.starter.database.DbProps.*;
 
 public class DbVerticle extends AbstractVerticle {

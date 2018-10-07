@@ -14,6 +14,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static io.vertx.starter.ApplicationProperties.CONFIG_DB_DRIVER;
+import static io.vertx.starter.ApplicationProperties.CONFIG_DB_URL;
 import static io.vertx.starter.database.DbProps.*;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -38,6 +40,8 @@ public class DbVerticleTest {
     jdbcClient = JDBCClient.createShared(vertx, new JsonObject()
       .put("url", TEST_DB_URL)
       .put("driver_class", DB_DRIVER)
+      .put("user", TEST_DB_USER)
+      .put("password", TEST_DB_PASSWORD)
       .put("max_pool_size", 30));
 
     // Create our table and insert 3 rows
