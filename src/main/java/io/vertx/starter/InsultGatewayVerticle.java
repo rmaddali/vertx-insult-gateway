@@ -42,13 +42,13 @@ public class InsultGatewayVerticle extends AbstractVerticle {
     
     private static final Logger LOG = LoggerFactory.getLogger(InsultGatewayVerticle.class);
 
-    
+
     private JsonObject config;
 	
     private ServiceDiscovery discovery;
 	
 	@Override
-    public void start() {
+    public void start(Future<Void> startFuture) {
 
 		conf = ConfigRetriever.create(vertx);
 		Router router = Router.router(vertx);

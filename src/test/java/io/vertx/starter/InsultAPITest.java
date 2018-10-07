@@ -10,8 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(VertxUnitRunner.class)
-public class MainVerticleTest {
-
+public class InsultAPITest {
   private Vertx vertx;
 
   @Before
@@ -26,16 +25,16 @@ public class MainVerticleTest {
   }
 
   @Test
-  public void testThatTheServerIsStarted(TestContext tc) {
-   Async async = tc.async();
-    vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-      tc.assertEquals(response.statusCode(), 200);
-      response.bodyHandler(body -> {
-        tc.assertTrue(body.length() > 0);
-        async.complete();
+  public void testGetAllInsults(TestContext context) {
+    final Async async = context.async();
+
+    vertx.createHttpClient().getNow(8080, "localhost", "/api/insults",
+      response -> {
+        response.handler(body -> {
+          context.assertEquals(200, response.statusCode());
+          context.assertTrue(body.toString().contains("Congrats "));
+          async.complete();
+        });
       });
-    });
-
   }
-
 }
