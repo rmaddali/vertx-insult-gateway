@@ -2,7 +2,8 @@ package io.vertx.starter.database;
 
 public class DbProps {
 
-  protected static final String PERSIST_INSULT_ADDRESS = "ping-address";
+  protected static final String INSULTS_ADDRESS = "insults-address";
+  protected static final String RETRIEVE_ALL_INSULTS_ADDRESS = "retrieve-insults";
   protected static final String CONFIG_DB_URL = "db.url";
   protected static final String DB_URL = "jdbc:hsqldb:mem:testdb;shutdown=true";
   protected static final String CONFIG_DB_DRIVER = "db.driver";

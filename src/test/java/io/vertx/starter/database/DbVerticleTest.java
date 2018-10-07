@@ -2,6 +2,7 @@ package io.vertx.starter.database;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.unit.Async;
@@ -15,13 +16,16 @@ import org.junit.runner.RunWith;
 
 import static io.vertx.starter.database.DbProps.*;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(VertxUnitRunner.class)
 public class DbVerticleTest {
 
   private Vertx vertx;
-  protected static final String TEST_DB_URL = "jdbc:hsqldb:mem:testdb;DB_CLOSE_DELAY=-1";
-  protected static final String TEST_DB_DRIVER = "org.hsqldb.jdbcDriver";
+
+  protected static final String TEST_DB_URL = "jdbc:hsqldb:mem:testdb;db_close_delay=-1";
+  protected static final String TEST_DB_DRIVER = DB_DRIVER;
   protected static final String TEST_DB_USER = DB_USER;
   protected static final String TEST_DB_PASSWORD = DB_PASSWORD;
   private JDBCClient jdbcClient;
@@ -36,6 +40,7 @@ public class DbVerticleTest {
       .put("driver_class", DB_DRIVER)
       .put("max_pool_size", 30));
 
+    // Create our table and insert 3 rows
     Flyway flyway = Flyway.configure().dataSource(TEST_DB_URL, TEST_DB_USER, TEST_DB_PASSWORD).load();
     flyway.migrate();
 
@@ -55,7 +60,7 @@ public class DbVerticleTest {
   }
 
   @Test
-  public void testMessageRoundTrip(TestContext tc) {
+  public void testPersistMessage(TestContext tc) {
 
     Async async = tc.async();
     Async async2 = tc.async();
@@ -64,7 +69,7 @@ public class DbVerticleTest {
       .put("action", "persist")
       .put("insult", "Congrats, spongy strumpet!");
 
-    vertx.eventBus().send(PERSIST_INSULT_ADDRESS, message, ar -> {
+    vertx.eventBus().send(INSULTS_ADDRESS, message, ar -> {
       if (ar.succeeded()) {
         tc.assertEquals("success", ar.result().body());
         jdbcClient.query(QUERY_ALL_INSULTS, res ->{
@@ -75,6 +80,31 @@ public class DbVerticleTest {
       }
       async.complete();
       async2.complete();
+    });
+  }
+
+  @Test
+  public void testRetrieveMessage(TestContext testContext) {
+    Async async = testContext.async();
+
+    JsonObject message = new JsonObject()
+      .put("action", "retrieve");
+
+    vertx.eventBus().send(INSULTS_ADDRESS, message, ar -> {
+      if (ar.failed()) {
+        System.out.println(ar.cause());
+      }
+      assertTrue(ar.succeeded());
+
+      JsonObject reply = (JsonObject) ar.result().body();
+      assertNotNull(reply);
+
+      JsonArray insults = reply.getJsonArray("insults");
+      assertNotNull(insults);
+      assertEquals(3, insults.size());
+      assertEquals("infectious devil-monk", insults.getString(0));
+
+      async.complete();
     });
 
   }
