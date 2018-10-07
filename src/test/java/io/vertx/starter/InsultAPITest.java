@@ -24,7 +24,6 @@ public class InsultAPITest {
     vertx.close(tc.asyncAssertSuccess());
   }
 
-  @Test
   public void testGetAllInsults(TestContext context) {
     final Async async = context.async();
 

@@ -22,10 +22,10 @@ import io.vertx.reactivex.servicediscovery.types.HttpEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.vertx.starter.ApplicationProperties.*;
+
 
 public class InsultGatewayVerticle extends AbstractVerticle {
-  private static final long CIRCUIT_TIMEOUT = 10000;
-  private static final long RESET_TIMEOUT = 10000;
   private static final Logger LOG = LoggerFactory.getLogger(InsultGatewayVerticle.class);
   private ConfigRetriever conf;
   private String message;
@@ -51,8 +51,8 @@ public class InsultGatewayVerticle extends AbstractVerticle {
       .setFallbackOnFailure(true)
       .setMaxFailures(2)
       .setMaxRetries(2)
-      .setResetTimeout(RESET_TIMEOUT)
-      .setTimeout(CIRCUIT_TIMEOUT);
+      .setResetTimeout(config().getInteger(GATEWAY_CIRCUIT_TIMEOUT, 1000))
+      .setTimeout(config().getInteger(GATEWAY_RESET_TIMEOUT, 1000));
 
 
     clientSpringbootBreaker = CircuitBreaker
@@ -71,15 +71,14 @@ public class InsultGatewayVerticle extends AbstractVerticle {
 
 
     clientSpringboot = WebClient.create(vertx, new WebClientOptions()
-      .setDefaultHost("springboot-noun-service.vertx-adjective.svc")
-      .setDefaultPort(8080));
+      .setDefaultHost(config().getString(GATEWAY_HOST_SPRINGBOOT_NOUN, "springboot-noun-service.vertx-adjective.svc"))
+      .setDefaultPort(config().getInteger(GATEWAY_HOST_SPRINGBOOT_NOUN_PORT, 8080)));
 
     clientSwarm = WebClient.create(vertx, new WebClientOptions()
-      .setDefaultHost("wildflyswarm-adj.vertx-adjective.svc")
-      .setDefaultPort(8080));
+      .setDefaultHost(config().getString(GATEWAY_HOST_WILDFLYSWARM_ADJ, "wildflyswarm-adj.vertx-adjective.svc"))
+      .setDefaultPort(config().getInteger(GATEWAY_HOST_WILDFLYSWARM_ADJ_PORT, 8080)));
 
-
-    if (config().getString("environment", "local").equalsIgnoreCase("kubernetes")) {
+    if (config().getString(ENVIRONMENT, "local").equalsIgnoreCase("kubernetes")) {
       ServiceDiscovery.create(vertx, discovery ->
         // Retrieve a web client
         HttpEndpoint.getWebClient(discovery, svc -> svc.getName().equals("vertx-adjective-service"), ar -> {
@@ -87,12 +86,6 @@ public class InsultGatewayVerticle extends AbstractVerticle {
             System.out.println("D'oh the service is not available");
           } else {
             clientVertx = ar.result();
-            vertx.createHttpServer().requestHandler(router::accept).listen(8080);
-            router.get("/api/insult").handler(this::getREST);
-            router.get("/health").handler(rc -> rc.response().end("OK"));
-            router.get("/*").handler(StaticHandler.create());
-            router.get("/api/cb-state").handler(this::checkHealth);
-
           }
         }));
     }else{
@@ -100,6 +93,12 @@ public class InsultGatewayVerticle extends AbstractVerticle {
         .setDefaultHost("http://spring-boot-rest-http-springboot-adj.b9ad.pro-us-east-1.openshiftapps.com")
         .setDefaultPort(80));
     }
+
+    vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+    router.get("/api/insult").handler(this::getREST);
+    router.get("/health").handler(rc -> rc.response().end("OK"));
+    router.get("/*").handler(StaticHandler.create());
+    router.get("/api/cb-state").handler(this::checkHealth);
 
     startFuture.complete();
 
