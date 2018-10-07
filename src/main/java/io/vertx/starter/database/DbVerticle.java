@@ -21,6 +21,7 @@ public class DbVerticle extends AbstractVerticle {
   @Override
   public void start(Future<Void> future) {
 
+    System.out.println(config().getString("level"));
     System.out.println(config().getString(CONFIG_DB_URL));
     System.out.println(config().getString(CONFIG_DB_DRIVER));
 
@@ -30,7 +31,6 @@ public class DbVerticle extends AbstractVerticle {
       .put("max_pool_size", 30)
       .put("user", config().getString(CONFIG_DB_USER, DB_USER))
       .put("password", config().getString(CONFIG_DB_PASSWORD, DB_PASSWORD)));
-
 
     EventBus eventBus = vertx.eventBus();
 
