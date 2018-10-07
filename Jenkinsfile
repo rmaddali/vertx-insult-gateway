@@ -2,7 +2,7 @@
 openshift.withCluster() {
   env.NAMESPACE = openshift.project()
   env.POM_FILE = env.BUILD_CONTEXT_DIR ? "${env.BUILD_CONTEXT_DIR}/pom.xml" : "pom.xml"
-  env.APP_NAME = "wildflyswarm-adj"
+  env.APP_NAME = "vertx-insult-gateway"
   echo "Starting Pipeline for ${APP_NAME}..."
   
   def projectBase = "pipelines-user1"
@@ -65,7 +65,7 @@ pipeline {
           ls target/*
           rm -rf oc-build && mkdir -p oc-build/deployments
           for t in \$(echo "jar;war;ear" | tr ";" "\\n"); do
-            cp -rfv ./target/wildflyswarm-adj-1.0.0-SNAPSHOT-fat.jar oc-build/deployments/ 2> /dev/null || echo "No \$t files"
+            cp -rfv ./target/vertx-insult-gateway-1.0.0-SNAPSHOT-fat.jar oc-build/deployments/ 2> /dev/null || echo "No \$t files"
           done
         """
 
