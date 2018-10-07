@@ -90,7 +90,7 @@ public class InsultGatewayVerticle extends AbstractVerticle {
         }));
     }else{
       clientVertx = WebClient.create(vertx, new WebClientOptions()
-        .setDefaultHost("http://spring-boot-rest-http-springboot-adj.b9ad.pro-us-east-1.openshiftapps.com")
+        .setDefaultHost("spring-boot-rest-http-springboot-adj.b9ad.pro-us-east-1.openshiftapps.com")
         .setDefaultPort(80));
     }
 
