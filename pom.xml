@@ -11,8 +11,15 @@
 
   <properties>
     <vertx.version>3.5.2</vertx.version>
-    <main.verticle>io.vertx.starter.InsultGatewayVerticle</main.verticle>
+    <main.verticle>io.vertx.starter.MainVerticle</main.verticle>
     <vertx-maven-plugin.version>1.0.13</vertx-maven-plugin.version>
+    <!-- Flyway Database Migrations -->
+    <flyway.version>5.2.0</flyway.version>
+    <flyway.url>jdbc:hsqldb:file:db/techexchange</flyway.url>
+    <flyway.driver>org.hsqldb.jdbcDriver</flyway.driver>
+    <flyway.locations>filesystem:src/main/resources/db/migration</flyway.locations>
+    <!-- HSQLDB -->
+    <hsqldb.version>2.3.4</hsqldb.version>
   </properties>
 
   <dependencyManagement>
@@ -28,25 +35,52 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- Vert.x Dependencies -->
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-web</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
+      <artifactId>vertx-rx-java2</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-unit</artifactId>
-      <scope>test</scope>
+      <artifactId>vertx-web</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-jdbc-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config-kubernetes-configmap</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-config-yaml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-client</artifactId>
+    </dependency>
+  <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+  </dependency>
+  <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-discovery-bridge-kubernetes</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-circuit-breaker</artifactId>
+    </dependency>
+    <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -67,32 +101,30 @@
       <artifactId>log4j-core</artifactId>
       <version>2.11.1</version>
     </dependency>
-    
+
+    <!-- Testing Dependencies -->
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-config</artifactId>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>${hsqldb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-config-yaml</artifactId>
+      <artifactId>vertx-unit</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-web-client</artifactId>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
+      <scope>test</scope>
     </dependency>
- <dependency>
-  <groupId>io.vertx</groupId>
-  <artifactId>vertx-rx-java2</artifactId>
-</dependency>
-<dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-service-discovery-bridge-kubernetes</artifactId>
-      
-    </dependency>
-    <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-circuit-breaker</artifactId>
-        </dependency>
   </dependencies>
 
   <build>
@@ -106,28 +138,32 @@
             <target>1.8</target>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.flywaydb</groupId>
+          <artifactId>flyway-maven-plugin</artifactId>
+          <version>5.1.4</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
     <plugins>
-    <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>vertx-maven-plugin</artifactId>
-                <version>${vertx-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>vmp</id>
-                        <goals>
-                            <goal>initialize</goal>
-                            <goal>package</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <redeploy>true</redeploy>
-                </configuration>
-            </plugin>
-    
+      <plugin>
+          <groupId>io.fabric8</groupId>
+          <artifactId>vertx-maven-plugin</artifactId>
+          <version>${vertx-maven-plugin.version}</version>
+          <executions>
+              <execution>
+                  <id>vmp</id>
+                  <goals>
+                      <goal>initialize</goal>
+                      <goal>package</goal>
+                  </goals>
+              </execution>
+          </executions>
+          <configuration>
+              <redeploy>true</redeploy>
+          </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -171,20 +207,20 @@
         </configuration>
       </plugin>
        <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>fabric8-maven-plugin</artifactId>
-                <version>3.5.39</version>
-                <executions>
-                    <execution>
-                        <id>fmp</id>
-                        <goals>
-                            <goal>resource</goal>
-                            <goal>helm</goal>
-                            <goal>build</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>fabric8-maven-plugin</artifactId>
+            <version>3.5.39</version>
+            <executions>
+                <execution>
+                    <id>fmp</id>
+                    <goals>
+                        <goal>resource</goal>
+                        <goal>helm</goal>
+                        <goal>build</goal>
+                    </goals>
+                </execution>
+            </executions>
+       </plugin>
     </plugins>
   </build>
 
