@@ -16,7 +16,7 @@ public class InsultAPITest {
   @Before
   public void setUp(TestContext tc) {
     vertx = Vertx.vertx();
-    vertx.deployVerticle(InsultGatewayVerticle.class.getName(), tc.asyncAssertSuccess());
+    vertx.deployVerticle(MainVerticle.class.getName(), tc.asyncAssertSuccess());
   }
 
   @After
@@ -24,10 +24,11 @@ public class InsultAPITest {
     vertx.close(tc.asyncAssertSuccess());
   }
 
+  @Test
   public void testGetAllInsults(TestContext context) {
     final Async async = context.async();
 
-    vertx.createHttpClient().getNow(8080, "localhost", "/api/insults",
+    vertx.createHttpClient().getNow(8080, "localhost", "/api/insult",
       response -> {
         response.handler(body -> {
           context.assertEquals(200, response.statusCode());

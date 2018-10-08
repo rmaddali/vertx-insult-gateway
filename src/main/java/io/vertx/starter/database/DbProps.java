@@ -2,7 +2,7 @@ package io.vertx.starter.database;
 
 public class DbProps {
 
-  protected static final String INSULTS_ADDRESS = "insults-address";
+  public static final String INSULTS_ADDRESS = "insults-address";
   protected static final String DB_URL = "jdbc:hsqldb:mem:testdb;shutdown=true";
   protected static final String DB_DRIVER = "org.hsqldb.jdbcDriver";
   protected static final String DB_USER = "sa";

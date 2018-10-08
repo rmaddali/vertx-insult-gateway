@@ -59,17 +59,20 @@ public class MainVerticle extends AbstractVerticle{
     // When running inside of Kubernetes, configure the application to also load
     // from a ConfigMap. This config is ONLY loaded when running inside of
     // Kubernetes or OpenShift
+/*
     ConfigStoreOptions confOpts = new ConfigStoreOptions()
       .setType("configmap")
+      .setFormat("yaml")
       .setConfig(new JsonObject()
-        .put("name", "insult-config")
+        .put("name", "app-config")
         .put("optional", true)
       );
+*/
 
     // Add the default and container config options into the ConfigRetriever
     ConfigRetrieverOptions retrieverOptions = new ConfigRetrieverOptions()
-      .addStore(localConfig)
-      .addStore(confOpts);
+      .addStore(localConfig);
+//      .addStore(confOpts);
 
     // Create the ConfigRetriever and return the Maybe when complete
     return ConfigRetriever.create(vertx, retrieverOptions).rxGetConfig().toMaybe();
