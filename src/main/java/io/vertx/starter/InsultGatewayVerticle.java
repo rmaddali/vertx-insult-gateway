@@ -1,7 +1,5 @@
 package io.vertx.starter;
 
-
-import io.reactivex.Single;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.AsyncResult;
@@ -17,31 +15,26 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
-import io.vertx.reactivex.ext.web.codec.BodyCodec;
 import io.vertx.reactivex.ext.web.handler.StaticHandler;
-import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
-import io.vertx.reactivex.servicediscovery.types.HttpEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.vertx.starter.ApplicationProperties.*;
-import static io.vertx.starter.database.DbProps.INSULTS_ADDRESS;
 
 
-public class InsultGatewayVerticle extends AbstractVerticle {
+public class InsultGatewayVerticle extends AbstractVerticle{
   private static final Logger LOG = LoggerFactory.getLogger(InsultGatewayVerticle.class);
-  private ConfigRetriever conf;
-  private String message;
-  private String logLevel;
+
   private WebClient clientSpringboot;
   private WebClient clientSwarm;
   private WebClient clientVertx;
-  private CircuitBreaker clientSpringbootBreaker;
-  private CircuitBreaker clientSwarmBreaker;
-  private CircuitBreaker clientVertxBreaker;
-  private JsonObject config;
+  private ConfigRetriever conf;
 
-  private ServiceDiscovery discovery;
+  CircuitBreaker clientSpringbootBreaker;
+  CircuitBreaker clientSwarmBreaker;
+  CircuitBreaker clientVertxBreaker;
+
+
 
   @Override
   public void start(Future<Void> startFuture) {
@@ -50,13 +43,13 @@ public class InsultGatewayVerticle extends AbstractVerticle {
     Router router = Router.router(vertx);
 
 
+
     CircuitBreakerOptions breakerOpts = new CircuitBreakerOptions()
       .setFallbackOnFailure(true)
       .setMaxFailures(2)
       .setMaxRetries(2)
       .setResetTimeout(config().getInteger(GATEWAY_CIRCUIT_TIMEOUT, 1000))
       .setTimeout(config().getInteger(GATEWAY_RESET_TIMEOUT, 1000));
-
 
     clientSpringbootBreaker = CircuitBreaker
       .create("nounSpringBoot", vertx, breakerOpts)
@@ -74,66 +67,46 @@ public class InsultGatewayVerticle extends AbstractVerticle {
 
 
     clientSpringboot = WebClient.create(vertx, new WebClientOptions()
-      .setDefaultHost(config().getString(GATEWAY_HOST_SPRINGBOOT_NOUN, "springboot-noun-service.vertx-adjective.svc"))
-      .setDefaultPort(config().getInteger(GATEWAY_HOST_SPRINGBOOT_NOUN_PORT, 8080)));
+      .setDefaultHost(config().getString(GATEWAY_HOST_SPRINGBOOT_NOUN, "springboot-noun-service-devenv-user2.apps.9249.rhte.opentlc.com"))
+      .setDefaultPort(config().getInteger(GATEWAY_HOST_SPRINGBOOT_NOUN_PORT, 80)));
 
     clientSwarm = WebClient.create(vertx, new WebClientOptions()
-      .setDefaultHost(config().getString(GATEWAY_HOST_WILDFLYSWARM_ADJ, "wildflyswarm-adj.vertx-adjective.svc"))
-      .setDefaultPort(config().getInteger(GATEWAY_HOST_WILDFLYSWARM_ADJ_PORT, 8080)));
+      .setDefaultHost(config().getString(GATEWAY_HOST_WILDFLYSWARM_ADJ, "wildflyswarm-adj-devenv-user2.apps.9249.rhte.opentlc.com"))
+      .setDefaultPort(config().getInteger(GATEWAY_HOST_WILDFLYSWARM_ADJ_PORT, 80)));
 
-    if (config().getString(ENVIRONMENT, "local").equalsIgnoreCase("kubernetes")) {
-      ServiceDiscovery.create(vertx, discovery ->
-        // Retrieve a web client
-        HttpEndpoint.getWebClient(discovery, svc -> svc.getName().equals("vertx-adjective-service"), ar -> {
-          if (ar.failed()) {
-            System.out.println("D'oh the service is not available");
-          } else {
-            clientVertx = ar.result();
-          }
-        }));
-    }else{
-      clientVertx = WebClient.create(vertx, new WebClientOptions()
-        .setDefaultHost("spring-boot-rest-http-springboot-adj.b9ad.pro-us-east-1.openshiftapps.com")
-        .setDefaultPort(80));
-    }
+
+
+    clientVertx = WebClient.create(vertx, new WebClientOptions()
+      .setDefaultHost(config().getString(GATEWAY_HOST_VERTX_ADJ,"vertx-adjective-service-devenv-user2.apps.9249.rhte.opentlc.com"))
+      .setDefaultPort(config().getInteger(GATEWAY_HOST_VERTX_ADJ_PORT,80)));
+
+
+
+    System.out.println("GATEWAY_HOST_WILDFLYSWARM_ADJ="+config().getString(GATEWAY_HOST_VERTX_ADJ,"springboot-noun-service.vertx-adjective.svc"));
+    System.out.println("GATEWAY_HOST_SPRINGBOOT_NOUN="+config().getString(GATEWAY_HOST_SPRINGBOOT_NOUN,"wildflyswarm-adj.vertx-adjective.svc"));
+    System.out.println("GATEWAY_HOST_VERTX_ADJ="+config().getString(GATEWAY_HOST_VERTX_ADJ,"wildflyswarm-adj.vertx-adjective.svc"));
+
+
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
     router.get("/api/insult").handler(this::insultHandler);
-    router.get("/health").handler(rc -> rc.response().end("OK"));
-    router.get("/*").handler(StaticHandler.create());
     router.get("/api/cb-state").handler(this::checkHealth);
+    router.get("/*").handler(StaticHandler.create());
+    System.out.println("Gdone");
+
+
 
     startFuture.complete();
 
+
   }
+
 
   public JsonObject circuitBreakerHandler(String key, String value) {
     System.out.println("Error= " + key + "," + "value=" + value);
 
     return new JsonObject().put(key, value);
   }
-
-
-  private AsyncResult<JsonObject> buildInsult(CompositeFuture cf) {
-    JsonObject insult = new JsonObject();
-    JsonArray adjectives = new JsonArray();
-
-    // Because there is no guaranteed order of the returned futures, we need to parse the results
-
-    for (int i = 0; i <= cf.size() - 1; i++) {
-      JsonObject item = cf.resultAt(i);
-      System.out.println("item=" + item.encodePrettily());
-      if (item.containsKey("adjective")) {
-        adjectives.add(item.getString("adjective"));
-      } else {
-        insult.put("noun", item.getString("noun"));
-      }
-
-    }
-    insult.put("adjectives", adjectives);
-    return Future.succeededFuture(insult);
-  }
-
   io.vertx.reactivex.core.Future<JsonObject> getNoun() {
 
 
@@ -150,109 +123,6 @@ public class InsultGatewayVerticle extends AbstractVerticle {
 
 
     //eturn fut;
-  }
-
-
-  io.vertx.reactivex.core.Future<JsonObject> getAdjective() {
-
-
-    return clientSwarmBreaker.executeWithFallback(fut ->
-      clientSwarm.get("/api/adjective")
-        .timeout(3000)
-        .rxSend()
-        .doOnError(e -> LOG.error("REST Request failed", e))
-        .map(HttpResponse::bodyAsJsonObject)
-        .subscribe(
-          j -> fut.complete(j),
-          e -> fut.fail(e)
-        ), t -> circuitBreakerHandler("adjective", "[Swarm adjective failure]"));
-  }
-
-  io.vertx.reactivex.core.Future<JsonObject> getAdjective2() {
-    return clientVertxBreaker.executeWithFallback(fut ->
-      clientVertx.get("/api/adjective")
-        .timeout(3000)
-        .rxSend()
-        .doOnError(e -> LOG.error("REST Request failed", e))
-        .map(HttpResponse::bodyAsJsonObject)
-        .subscribe(
-          j -> fut.complete(j),
-          e -> fut.fail(e)
-        ), t -> circuitBreakerHandler("adjective", "[Vertx adj failure]"));
-  }
-
-  private Future<String> persistInsult(JsonObject insult) {
-    Future<String> retVal = Future.future();
-    // persist the insult
-    vertx.eventBus().send(INSULTS_ADDRESS, insult, ar2 -> {
-      if (ar2.succeeded()) {
-        System.out.println("persisted");
-        retVal.complete("success");
-      }else{
-        System.out.println("not persisted");
-        retVal.complete("failure");
-      }
-    });
-    return retVal;
-  }
-
-  private void insultHandler(RoutingContext routingContext) {
-    CompositeFuture.all( getNoun(), getAdjective(), getAdjective2()).setHandler(ar -> {
-      JsonObject insult = new JsonObject();
-      JsonArray adjectives = new JsonArray();
-
-      // Because there is no guaranteed order of the returned futures, we need to parse the results
-
-      for (int i = 0; i <= ar.result().size() - 1; i++) {
-        JsonObject item = ar.result().resultAt(i);
-        System.out.println("item=" + item.encodePrettily());
-        if (item.containsKey("adjective")) {
-          adjectives.add(item.getString("adjective"));
-        } else {
-          insult.put("noun", item.getString("noun"));
-        }
-      }
-
-      insult.put("adjectives", adjectives);
-
-      JsonObject msg = new JsonObject()
-        .put("action", "persist")
-        .put("insult", insult.encodePrettily());
-
-      vertx.eventBus().send(INSULTS_ADDRESS, msg, ar2 -> {
-        if (ar2.succeeded()) {
-          System.out.println("persisted");
-          routingContext.response().putHeader("content-type", "application/json").end(insult.encodePrettily());
-        }else{
-          System.out.println("not persisted");
-          routingContext.response().putHeader("content-type", "application/json").end(new JsonObject("Error").encodePrettily());
-        }
-      });
-
-    });
-  }
-
-
-  public void getREST(RoutingContext rc) {
-    // Request 2 adjectives and a noun in parallel, then handle the results
-
-
-
-    CompositeFuture.all(getNoun(), getAdjective(), getAdjective2())
-      .setHandler(ar -> {
-
-        if (ar.succeeded()) {
-          AsyncResult<JsonObject> result = buildInsult(ar.result());
-          rc.response().putHeader("content-type", "application/json").end(result.result().encodePrettily());
-          JsonObject msg = new JsonObject()
-            .put("action", "persist")
-            .put("insult", result.result().encodePrettily());
-          persistInsult(msg);
-        } else {
-          System.out.println("error");
-          rc.response().putHeader("content-type", "application/json").end(new JsonObject("Error").encodePrettily());
-        }
-      });
   }
 
   public void checkHealth(RoutingContext rc) {
@@ -281,15 +151,73 @@ public class InsultGatewayVerticle extends AbstractVerticle {
 
 
   }
+  io.vertx.reactivex.core.Future<JsonObject> getAdjective() {
 
 
-  private final CompositeFuture mapResultToError(CompositeFuture res)
-    throws Exception {
-    if (res.succeeded()) {
-      return res;
-    }
-    throw new Exception(res.cause());
+    return clientSwarmBreaker.executeWithFallback(fut ->
+      clientSwarm.get("/api/adjective")
+        .timeout(3000)
+        .rxSend()
+        .doOnError(e -> LOG.error("REST Request failed", e))
+        .map(HttpResponse::bodyAsJsonObject)
+        .subscribe(
+          j -> fut.complete(j),
+          e -> fut.fail(e)
+        ), t -> circuitBreakerHandler("adjective", "[Swarm adjective failure]"));
   }
 
+  io.vertx.reactivex.core.Future<JsonObject> getAdjective2() {
+    return clientVertxBreaker.executeWithFallback(fut ->
+      clientVertx.get("/api/adjective")
+        .timeout(3000)
+        .rxSend()
+        .doOnError(e -> LOG.error("REST Request failed", e))
+        .map(HttpResponse::bodyAsJsonObject)
+        .subscribe(
+          j -> fut.complete(j),
+          e -> fut.fail(e)
+        ), t -> circuitBreakerHandler("adjective", "[Vertx adj failure]"));
+  }
+
+  private AsyncResult<JsonObject> buildInsult(CompositeFuture cf) {
+    JsonObject insult = new JsonObject();
+    JsonArray adjectives = new JsonArray();
+
+    // Because there is no garanteed order of the returned futures, we need to parse the results
+
+    for (int i=0; i<=cf.size()-1; i++) {
+      JsonObject item = cf.resultAt(i);
+      if (item.containsKey("adjective")) {
+        adjectives.add(item.getString("adjective"));
+      } else {
+        insult.put("noun", item.getString("noun"));
+      }
+
+    }
+    insult.put("adjectives", adjectives);
+
+
+    return Future.succeededFuture(insult);
+  }
+  private void insultHandler(RoutingContext rc) {
+
+    CompositeFuture.all(getNoun(), getAdjective(), getAdjective2())
+      .setHandler(ar -> {
+
+        if (ar.succeeded()) {
+          AsyncResult<JsonObject> result=buildInsult(ar.result());
+          rc.response().putHeader("content-type", "application/json").end(result.result().encodePrettily());
+        }
+        else
+        {
+          System.out.println("error");
+
+          rc.response().putHeader("content-type", "application/json").end(new JsonObject("Error").encodePrettily());
+        }
+
+
+
+      });
+  }
 
 }

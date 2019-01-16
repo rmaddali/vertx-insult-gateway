@@ -16,7 +16,7 @@ public class InsultAPITest {
   @Before
   public void setUp(TestContext tc) {
     vertx = Vertx.vertx();
-    vertx.deployVerticle(MainVerticle.class.getName(), tc.asyncAssertSuccess());
+    vertx.deployVerticle(InsultGatewayVerticle.class.getName(), tc.asyncAssertSuccess());
   }
 
   @After
@@ -24,17 +24,16 @@ public class InsultAPITest {
     vertx.close(tc.asyncAssertSuccess());
   }
 
-  @Test
-  public void testGetAllInsults(TestContext context) {
-    final Async async = context.async();
 
-    vertx.createHttpClient().getNow(8080, "localhost", "/api/insult",
-      response -> {
-        response.handler(body -> {
-          context.assertEquals(200, response.statusCode());
-          context.assertTrue(body.toString().contains("Congrats "));
-          async.complete();
-        });
+  @Test
+  public void testThatTheServerIsStartedAndReturnsAnAdjective(TestContext tc) {
+    Async async = tc.async();
+    vertx.createHttpClient().getNow(8080, "localhost", "/api/insult", response -> {
+      tc.assertEquals(response.statusCode(), 200);
+      response.bodyHandler(body -> {
+        tc.assertTrue(body.length() > 0);
+        async.complete();
       });
+    });
   }
 }
