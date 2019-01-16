@@ -21,7 +21,7 @@ public class MainVerticle extends AbstractVerticle{
       .doOnError(startFuture::fail)
       .subscribe(ar -> {
         vertx.deployVerticle(InsultGatewayVerticle.class.getName(), new DeploymentOptions().setConfig(ar));
-        vertx.deployVerticle(DbVerticle.class.getName(), new DeploymentOptions().setConfig(ar));
+        //vertx.deployVerticle(DbVerticle.class.getName(), new DeploymentOptions().setConfig(ar));
 //        vertx.deployVerticle(ConfigTestVerticle.class.getName(), new DeploymentOptions().setConfig(ar));
         startFuture.complete();
       });
