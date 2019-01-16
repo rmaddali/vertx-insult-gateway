@@ -19,7 +19,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Circuit Breaker Mission - Vert.x</title>
+    <title>Insult Service Gateway</title>
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
@@ -31,26 +31,16 @@
 <div class="container">
 
     <div>
-        <h1>Vert.x Circuit Breaker Booster</h1>
+        <h1>Insult Service Gateway </h1>
         <p class="lead">
-            Cloud applications are often comprised of many services. And between those services there often can be many interactions.
-            But even if some of those services fail or are unavailable, we may want to offer an alternative response to an error condition,
-            that it does not increase load on service in, which is unavailable because of high load. And to achieve this, we need a generic
-            mechanism over the failed or unavailable service to service communication, which can quickly and easily determine that the services
-            are not functioning properly, hence can either return a default result or fail quickly and gracefully with enough information about
-            the current failure. This mechanism is called circuit breaker.
+          Elizabethan insults - Random Noun and adjectives Generator for Shakespearean Insults!
         </p>
-        <p>
-            On this page you can invoke the <code>greeting service</code>. This service uses a <code>name
-            service</code>. The invocations are protected by a circuit breaker. You can configure the state of the
-            <code>name service</code> using the <code>toggle</code> button.
-        </p>
+
 
         <div class="row">
 
             <div class="col-md-6">
-                <h2>Greeting service</h2>
-                <div id="circuit-state"></div>
+                <
                 <button id="invoke" type="submit" class="btn btn-primary">Invoke</button>
                 <h3>Results:</h3>
                     <form class="form-inline">
@@ -59,13 +49,7 @@
                 <pre style="min-height:20em;"><code id="greeting-result"></code></pre>
             </div>
 
-            <div class="col-md-6">
-                <h2>Name service</h2>
-                <div id="name-state"></div>
-                <form class="form-inline">
-                    <button id="toggle" type="submit" class="btn btn-primary">Toggle</button>
-                </form>
-            </div>
+
 
         </div>
 
@@ -167,30 +151,7 @@
         });
     }
 
-    $(document).ready(function () {
-        $("#invoke").click(function (e) {
-            invokeService();
-            e.preventDefault();
-        });
 
-        $("#toggle").click(function (e) {
-            toggleNameServiceState();
-            e.preventDefault();
-        });
-
-        initNameServiceState();
-        initCircuitState();
-        var eb = new EventBus('/eventbus');
-        eb.onopen = function () {
-            console.log("Event bus opened");
-            eb.registerHandler('circuit-breaker', function (error,  msg) {
-                var state = msg.body.state;
-                updateCircuitBreakerState(state);
-                
-            });
-        };
-
-    });
 
     var foo;
 </script>
