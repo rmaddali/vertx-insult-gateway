@@ -40,7 +40,7 @@
         <div class="row">
 
             <div class="col-md-6">
-                <
+
                 <button id="invoke" type="submit" class="btn btn-primary">Invoke</button>
                 <h3>Results:</h3>
                     <form class="form-inline">
@@ -150,6 +150,15 @@
             $("#greeting-result").html(JSON.stringify(res));
         });
     }
+    $(document).ready(function () {
+      $("#invoke").click(function (e) {
+        invokeService();
+        e.preventDefault();
+      });
+
+
+
+    });
 
 
 
