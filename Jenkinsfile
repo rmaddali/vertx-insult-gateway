@@ -1,4 +1,3 @@
-
 openshift.withCluster() {
   env.NAMESPACE = openshift.project()
   env.POM_FILE = env.BUILD_CONTEXT_DIR ? "${env.BUILD_CONTEXT_DIR}/pom.xml" : "pom.xml"
@@ -50,12 +49,7 @@ pipeline {
       }
     }
 
-    // Run Maven unit tests
-    stage('Unit Test'){
-      steps {
-        sh "mvn test -f ${POM_FILE}"
-      }
-    }
+    
 
     // Build Container Image using the artifacts produced in previous stages
     stage('Build Container Image'){
@@ -65,7 +59,7 @@ pipeline {
           ls target/*
           rm -rf oc-build && mkdir -p oc-build/deployments
           for t in \$(echo "jar;war;ear" | tr ";" "\\n"); do
-            cp -rfv ./target/vertx-insult-gateway-1.0.0-SNAPSHOT-fat.jar oc-build/deployments/ 2> /dev/null || echo "No \$t files"
+            cp -rfv ./target/vertx-insult-gateway-1.0.0-SNAPSHOT.jar oc-build/deployments/ 2> /dev/null || echo "No \$t files"
           done
         """
 
@@ -93,23 +87,7 @@ pipeline {
       }
     }
 
-    stage ('Verify Deployment to Dev') {
-      steps {
-        script {
-          openshift.withCluster() {
-              openshift.withProject("${STAGE1}") {
-              def dcObj = openshift.selector('dc', env.APP_NAME).object()
-              def podSelector = openshift.selector('pod', [deployment: "${APP_NAME}-${dcObj.status.latestVersion}"])
-              podSelector.untilEach {
-                  echo "pod: ${it.name()}"
-                  return it.object().status.containerStatuses[0].ready
-              }
-            }
-          }
-        }
-      }
-    }
-
+    
     stage('Promote from Dev to Stage') {
       steps {
         script {
@@ -120,22 +98,7 @@ pipeline {
       }
     }
 
-    stage ('Verify Deployment to Stage') {
-      steps {
-        script {
-          openshift.withCluster() {
-              openshift.withProject("${STAGE2}") {
-              def dcObj = openshift.selector('dc', env.APP_NAME).object()
-              def podSelector = openshift.selector('pod', [deployment: "${APP_NAME}-${dcObj.status.latestVersion}"])
-              podSelector.untilEach {
-                  echo "pod: ${it.name()}"
-                  return it.object().status.containerStatuses[0].ready
-              }
-            }
-          }
-        }
-      }
-    }
+    
     
 
    
